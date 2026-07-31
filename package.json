@@ -1,0 +1,41 @@
+{
+  "name": "lightsession-react-native",
+  "version": "0.1.0",
+  "description": "Screen mapping and session replay for React Native, on top of the LightSession Android SDK.",
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "files": [
+    "src",
+    "android",
+    "!android/build",
+    "ios",
+    "lightsession-react-native.podspec",
+    "navigation.js",
+    "navigation.d.ts"
+  ],
+  "keywords": [
+    "react-native",
+    "android",
+    "session-replay",
+    "analytics"
+  ],
+  "license": "UNLICENSED",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "react": "19.2.3",
+    "react-native": "0.86.2",
+    "typescript": "^5.5.0"
+  },
+  "codegenConfig": {
+    "name": "LightSessionSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.lightsession.reactnative"
+    }
+  }
+}

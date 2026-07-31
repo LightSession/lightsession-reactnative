@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext for local development only. The SDK posts to http://10.0.2.2 — the emulator's route to
+  the host machine — and Android blocks that silently on a release-shaped config: no exception, no
+  log, just nothing arriving. Declared here rather than relying on the React Native plugin's
+  placeholder so this experiment cannot fail for a reason that has nothing to do with it.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application
+        android:usesCleartextTraffic="true"
+        tools:targetApi="28"
+        tools:ignore="GoogleAppIndexingWarning" />
+</manifest>

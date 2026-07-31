@@ -1,0 +1,24 @@
+pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
+plugins { id("com.facebook.react.settings") }
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+rootProject.name = 'example'
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')
+
+// `mavenLocal` is here only because the Android SDK is not published yet. The library declares the
+// dependency itself, but `repositoriesMode = PREFER_SETTINGS` means a module's own `repositories` block
+// is ignored — settings wins — so the app has to say where the transitive artifact comes from.
+//
+// This is the one line a consuming app currently needs, and it is repository configuration rather than
+// integration code. It goes away the moment the SDK is on a repository the app already reads.
+dependencyResolutionManagement {
+    repositoriesMode = RepositoriesMode.PREFER_SETTINGS
+    repositories {
+        mavenLocal {
+            content { includeGroup("com.lightsession") }
+        }
+        google()
+        mavenCentral()
+        maven { url = uri("$rootDir/../node_modules/jsc-android/dist") }
+    }
+}

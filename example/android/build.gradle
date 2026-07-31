@@ -1,0 +1,25 @@
+buildscript {
+    ext {
+        buildToolsVersion = "36.0.0"
+        // 26, not React Native's default of 24: the SDK's own minSdk is 26, and a library's minSdk is
+        // a ceiling on who can consume it — the manifest merger refuses outright, before anything is
+        // built. Worth writing down as the first compatibility finding of this experiment: an RN app
+        // on the template's default cannot take this SDK without raising its own floor.
+        minSdkVersion = 26
+        compileSdkVersion = 36
+        targetSdkVersion = 36
+        ndkVersion = "27.1.12297006"
+        kotlinVersion = "2.1.20"
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+    }
+}
+
+apply plugin: "com.facebook.react.rootproject"

@@ -1,0 +1,43 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+*.tsbuildinfo
+
+# React Native / Metro
+.metro-health-check*
+example/.bundle/
+example/ios/Pods/
+example/ios/build/
+example/ios/*.xcworkspace/xcuserdata/
+
+# Android
+#
+# The library's own build output as well as the example's. `example/android/build/` was ignored and
+# `android/build/` was not, so 115 files of Kotlin compile caches and dex transforms were staged for the first
+# commit — caught by counting the files rather than by trusting the ignore list.
+android/build/
+android/.gradle/
+example/android/.gradle/
+example/android/build/
+example/android/app/build/
+example/android/local.properties
+*.keystore
+!debug.keystore
+
+# CocoaPods, and the gems that install it.
+#
+# `example/vendor/bundle` is 29 MB of Ruby gems and `example/ios/Pods` is 508 MB of dependencies — both are
+# reproduced by `bundle install` and `pod install`, and neither belongs in a repository. The generated
+# `.xcworkspace` goes for the same reason: `pod install` writes it.
+example/vendor/
+example/ios/*.xcworkspace/
+
+# macOS
+.DS_Store
+
+# Scratch measurements. The findings belong in README.md, written down; the raw dumps that produced
+# them are not worth versioning and go stale the moment the SDK changes.
+measurements/
+*.png
+!docs/*.png

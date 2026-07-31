@@ -1,0 +1,58 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.7.2")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20")
+    }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "org.jetbrains.kotlin.android"
+// Generates the TurboModule spec base class from src/NativeLightSession.ts. The module below extends
+// what this produces, so the JavaScript signature and the Kotlin one cannot drift apart — a mismatch
+// becomes a compile error instead of a silent no-op at runtime.
+apply plugin: "com.facebook.react"
+
+android {
+    namespace "com.lightsession.reactnative"
+    compileSdk 36
+
+    defaultConfig {
+        // 26, matching the LightSession Android SDK. A library's minSdk is a ceiling on who can consume
+        // it, so this cannot be lower than what it depends on — and React Native's own template
+        // defaults to 24, which means an app adopting this has to raise its floor. Worth knowing before
+        // adopting rather than after.
+        minSdk 26
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+repositories {
+    // The SDK this wraps. `mavenLocal` first while it is unpublished; a released version resolves from
+    // GitHub Packages like any other dependency.
+    mavenLocal {
+        content { includeGroup("com.lightsession") }
+    }
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation "com.facebook.react:react-android"
+    implementation "com.lightsession:lightsession-android:0.13.0"
+}
