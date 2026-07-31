@@ -14,7 +14,7 @@ import { name as appName } from './app.json';
 // template's, untouched — the module is autolinked and takes its Application context from React
 // itself. That is what the package is for.
 LightSession.init({
-  apiKey: '0fd6121bb16245d8b336f8840cec5b4c',
+  apiKey: 'dev-key',
   // 10.0.2.2 is the host machine as seen from the Android emulator.
   // The Android emulator reaches the host at 10.0.2.2; the iOS simulator shares the host's own
   // network stack, so it is 127.0.0.1. One config object, two platforms.
