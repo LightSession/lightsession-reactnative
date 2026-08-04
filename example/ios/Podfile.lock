@@ -2211,7 +2211,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   FBLazyVector: 3c3be9a019176b5699455f7f66c5444b78a411c6
   hermes-engine: d195f7165c16f43ee47539cdf8ba160d73812718
-  LightSession: bde1a885a8021a888bc0b40a8e5580c67d0e353c
+  LightSession: 55674695bf73ea9f67e3308ce17c49ff138aa42f
   lightsession-react-native: cb3a1ce5e3e4da013f1db5786eea5e349cc44d1c
   RCTDeprecation: bccb6545c26db881ecddfd83a3f9ea82aba1605f
   RCTRequired: b2f74764d596fc0051f00fee94b49bf41a6f7f5a
