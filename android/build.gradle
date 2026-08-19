@@ -54,5 +54,5 @@ repositories {
 
 dependencies {
     implementation "com.facebook.react:react-android"
-    implementation "com.lightsession:lightsession-android:0.13.0"
+    implementation "com.lightsession:lightsession-android:0.26.0"
 }
