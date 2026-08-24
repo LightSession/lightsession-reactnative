@@ -103,6 +103,35 @@ RCT_EXPORT_MODULE(LightSession)
     [LSRNBridge clearSubScreen:name];
 }
 
+/// One HTTP request the app made, reported from JavaScript.
+///
+/// The URL crosses whole and the SDK parses it — collapsing the path, dropping the query, applying
+/// the sample. A third implementation of those rules in JavaScript would be a third place for them
+/// to drift.
+///
+/// `double` for every number because that is what a JavaScript number is; the SDK rounds. Nothing
+/// is validated here beyond the two strings a nil would crash on: the SDK refuses a URL it cannot
+/// read and clamps the rest, and duplicating those checks here would be two places to keep
+/// agreeing.
+- (void)recordRequest:(NSString *)method
+                  url:(NSString *)url
+           statusCode:(double)statusCode
+           durationMs:(double)durationMs
+         requestBytes:(double)requestBytes
+        responseBytes:(double)responseBytes
+                error:(NSString *)error {
+    if (method.length == 0 || url.length == 0) {
+        return;
+    }
+    [LSRNBridge recordRequest:method
+                          url:url
+                   statusCode:(NSInteger)statusCode
+               durationMillis:durationMs
+                 requestBytes:requestBytes
+                responseBytes:responseBytes
+                        error:error ?: @""];
+}
+
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params {
     return std::make_shared<facebook::react::NativeLightSessionSpecJSI>(params);
