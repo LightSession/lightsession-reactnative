@@ -1,5 +1,8 @@
 import {useRef} from 'react';
-import {createNavigationContainerRef} from '@react-navigation/native';
+import {
+  createNavigationContainerRef,
+  type ParamListBase,
+} from '@react-navigation/native';
 
 import {setScreen} from './index';
 
@@ -13,7 +16,7 @@ import {setScreen} from './index';
  */
 
 export interface NavigationTracking {
-  ref: ReturnType<typeof createNavigationContainerRef>;
+  ref: ReturnType<typeof createNavigationContainerRef<ParamListBase>>;
   onReady: () => void;
   onStateChange: () => void;
 }
@@ -45,9 +48,21 @@ export interface NavigationTracking {
  */
 export function useLightSessionNavigation(): NavigationTracking {
   // Created once. A ref rebuilt on re-render would detach the container from the thing being read.
-  const refHolder = useRef<ReturnType<typeof createNavigationContainerRef>>();
+  //
+  // The initial value is passed explicitly, and the `| undefined` with it. `useRef<T>()` with no
+  // argument stopped compiling in `@types/react` 19 — it now requires one — so without this the
+  // helper fails to typecheck in any app on React 19, which is every app on React Native 0.76 and
+  // later. Found by installing this package into an RN 0.87 app: the app's own `tsc --noEmit`
+  // reported it, in our file.
+  const refHolder = useRef<
+    ReturnType<typeof createNavigationContainerRef<ParamListBase>> | undefined
+  >(undefined);
   if (!refHolder.current) {
-    refHolder.current = createNavigationContainerRef();
+    // Parameterised with `ParamListBase`, and that is load-bearing rather than a formality: the
+    // bare call defaults to an empty route list in React Navigation 7, so `getCurrentRoute()`
+    // resolves to `never` and reading `.name` off it does not compile. This helper does not know
+    // the app's routes and does not need to — it reads a name.
+    refHolder.current = createNavigationContainerRef<ParamListBase>();
   }
   const ref = refHolder.current;
 

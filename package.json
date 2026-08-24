@@ -22,9 +22,11 @@
   "license": "UNLICENSED",
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "@react-navigation/native": "*"
   },
   "devDependencies": {
+    "@react-navigation/native": "^7.0.0",
     "@types/react": "^19.0.0",
     "react": "19.2.3",
     "react-native": "0.86.2",
@@ -36,6 +38,11 @@
     "jsSrcsDir": "src",
     "android": {
       "javaPackageName": "com.lightsession.reactnative"
+    }
+  },
+  "peerDependenciesMeta": {
+    "@react-navigation/native": {
+      "optional": true
     }
   }
 }
