@@ -64,6 +64,33 @@ export interface LightSessionOptions {
   verbose?: boolean;
   /** Must match the ingest service's idle timeout, or sessions split or run together. */
   sessionTimeoutMs?: number;
+
+  /**
+   * Whether the app's own HTTP requests are recorded. **Off by default**, and the only option here
+   * that is.
+   *
+   * Everything else in this list describes what the SDK does to itself. This one puts us near the
+   * traffic of the app, so nobody gets it without asking — twice: this arms the recording, and
+   * {@link captureNetwork} puts us in the path. Either alone records nothing.
+   *
+   * Bodies, headers and query strings are never captured, on any setting: there is no field for
+   * them. Paths arrive with their dynamic segments already collapsed on the device —
+   * `/v1/orders/{id}`, never a real id.
+   */
+  captureNetwork?: boolean;
+
+  /**
+   * What fraction of sessions have their network recorded. `1.0` — everything — by default.
+   *
+   * The unit is the session, not the request: a coin per request at a tenth turns a screen that
+   * fires six calls at once into one recorded call, and a reader then concludes the screen makes one
+   * request. Failures are recorded regardless, marked as standing for no traffic, so a rare one can
+   * still be opened and watched without moving any rate or percentile.
+   *
+   * Sampling makes every count an estimate, and the dashboard says so by showing the sample size
+   * beside it. That is why the default is 1.0.
+   */
+  networkSampleRate?: number;
 }
 
 /**
@@ -89,7 +116,16 @@ export interface LightSessionOptions {
  *
  * Calling it twice does nothing: the SDK keeps the first configuration.
  */
+import {captureNetwork} from './network';
+import {rememberUrls} from './internal';
+
+export {captureNetwork};
+export type {StopCapturing} from './network';
+
 export function init(options: LightSessionOptions): void {
+  // Before the native call, so a capture installed immediately after `init` already knows what
+  // to skip.
+  rememberUrls(options.ingestUrl, options.apiUrl);
   NativeLightSession.init(options);
 }
 
@@ -140,4 +176,5 @@ export default {
   isRecording,
   setSubScreen,
   clearSubScreen,
+  captureNetwork,
 };

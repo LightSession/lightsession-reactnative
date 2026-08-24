@@ -100,6 +100,12 @@ class LightSessionModule(context: ReactApplicationContext) :
                 map.boolOr("startRecordingOnInit", defaults.startRecordingOnInit),
             captureIntervalMs = map.longOr("captureIntervalMs", defaults.captureIntervalMs),
             sessionTimeoutMs = map.longOr("sessionTimeoutMs", defaults.sessionTimeoutMs),
+            // Off by default in the SDK, and left that way here. The JavaScript side also has to
+            // install its interceptor before anything is recorded, so this is one of two switches
+            // rather than the only one — same shape as the native integration.
+            captureNetwork = map.boolOr("captureNetwork", defaults.captureNetwork),
+            networkSampleRate =
+                map.doubleOr("networkSampleRate", defaults.networkSampleRate),
             // Not a choice. See the kdoc.
             screensReportedByHost = true,
         )
@@ -116,6 +122,38 @@ class LightSessionModule(context: ReactApplicationContext) :
         // `Application.onCreate` happens, which is the main thread. It is this bridge that changed the
         // thread, so it is this bridge's job to change it back.
         runOnMain { LightSession.getInstance().init(application, settings) }
+    }
+
+    /**
+     * One request, from JavaScript.
+     *
+     * Not hopped to the main thread, unlike [init], and that is deliberate: this runs once per
+     * request and the SDK's recording path is built to be called from a network thread — hopping
+     * would put every request the app makes onto the main thread's queue, which is the opposite of
+     * what a measurement should cost.
+     *
+     * `Double` for the numbers because that is what the codegen gives for a JavaScript `number`.
+     * Rounded rather than truncated, so a 118.7 ms request is not reported as 118.
+     */
+    override fun recordRequest(
+        method: String?,
+        url: String?,
+        statusCode: Double,
+        durationMs: Double,
+        requestBytes: Double,
+        responseBytes: Double,
+        error: String?,
+    ) {
+        if (method.isNullOrBlank() || url.isNullOrBlank()) return
+        LightSession.getInstance().recordRequest(
+            method = method,
+            url = url,
+            statusCode = statusCode.toInt(),
+            durationMs = Math.round(durationMs),
+            requestBytes = Math.round(requestBytes),
+            responseBytes = Math.round(responseBytes),
+            error = error ?: "",
+        )
     }
 
     /** Runs now if already on the main thread, and posts if not. */
@@ -137,6 +175,9 @@ class LightSessionModule(context: ReactApplicationContext) :
      * duration anyone configures — but the same read is used for intervals, and a wrong number here
      * changes how often the screen is captured.
      */
+    private fun ReadableMap.doubleOr(key: String, fallback: Double): Double =
+        if (hasKey(key) && !isNull(key)) getDouble(key) else fallback
+
     private fun ReadableMap.longOr(key: String, fallback: Long): Long =
         if (hasKey(key) && !isNull(key)) getDouble(key).toLong() else fallback
 

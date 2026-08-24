@@ -29,4 +29,24 @@ public final class LSRNBridge: NSObject {
     @objc public static func startRecording() { LightSessionBridge.startRecording() }
     @objc public static func stopRecording() { LightSessionBridge.stopRecording() }
     @objc public static var isRecording: Bool { LightSessionBridge.isRecording }
+
+    @objc public static func recordRequest(
+        _ method: String,
+        url: String,
+        statusCode: Int,
+        durationMillis: Double,
+        requestBytes: Double,
+        responseBytes: Double,
+        error: String
+    ) {
+        LightSessionBridge.recordRequest(
+            method: method,
+            url: url,
+            statusCode: statusCode,
+            durationMillis: durationMillis,
+            requestBytes: requestBytes,
+            responseBytes: responseBytes,
+            error: error
+        )
+    }
 }

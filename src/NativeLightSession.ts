@@ -50,6 +50,30 @@ export interface Spec extends TurboModule {
   /** Declares part of a screen as a screen of its own — a modal, a tab, a wizard step. */
   setSubScreen(name: string): void;
   clearSubScreen(name: string): void;
+
+  /**
+   * Records one HTTP request the app made.
+   *
+   * Flat parameters rather than an object, unlike `init`: this one is called once per request, and
+   * the codegen turns an `Object` into a map allocation on every crossing. `init` happens once and
+   * can afford it.
+   *
+   * The **URL goes across whole** and the native side parses it — collapsing the path, dropping the
+   * query, applying the sample. A third implementation of those rules in JavaScript would be a
+   * third place for them to drift, and their subtle cases were found the hard way.
+   *
+   * `statusCode` is `0` for a request that never got an answer, paired with `error` carrying the
+   * class of what went wrong. Byte counts of `0` mean unknown, not empty.
+   */
+  recordRequest(
+    method: string,
+    url: string,
+    statusCode: number,
+    durationMs: number,
+    requestBytes: number,
+    responseBytes: number,
+    error: string,
+  ): void;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('LightSession');
