@@ -15,7 +15,7 @@ Pod::Spec.new do |s|
   s.version      = package["version"]
   s.summary      = package["description"]
   s.homepage     = "https://github.com/lightsession/lightsession-react-native"
-  s.license      = { :type => "UNLICENSED" }
+  s.license      = { :type => "Apache-2.0", :file => "LICENSE" }
   s.author       = "LightSession"
   s.platforms    = { :ios => "15.0" }
   s.source       = { :git => "https://github.com/lightsession/lightsession-react-native.git", :tag => "#{s.version}" }
@@ -28,5 +28,8 @@ Pod::Spec.new do |s|
   # Brings in React itself and, under the new architecture, the generated spec this module conforms to.
   install_modules_dependencies(s)
 
-  s.dependency "LightSession", "~> 0.1"
+  # `~> 0.2`, e a faixa importa: `~> 0.1` aceitava qualquer 0.1.x e o SDK iOS esta em 0.2.x ha
+  # cinco releases. Com o podspec do SDK tambem corrigido para 0.2.5, esta linha e o que faz o
+  # CocoaPods resolver a versao que este bridge foi de fato compilado contra.
+  s.dependency "LightSession", "~> 0.2"
 end
