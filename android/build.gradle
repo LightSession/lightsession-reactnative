@@ -46,7 +46,7 @@ repositories {
     // The SDK this wraps. `mavenLocal` first while it is unpublished; a released version resolves from
     // GitHub Packages like any other dependency.
     mavenLocal {
-        content { includeGroup("com.lightsession") }
+        content { includeGroup("io.lightsession") }
     }
     google()
     mavenCentral()
@@ -58,5 +58,5 @@ dependencies {
     // numero que nunca chegou a ser publicado — o build so passava porque a linha acima resolve de
     // `mavenLocal`, onde um `publishToMavenLocal` local o tinha colocado. Num consumidor sem esse
     // passo, a resolucao falha.
-    implementation "com.lightsession:lightsession-android:0.28.0"
+    implementation "io.lightsession:lightsession-android:0.28.0"
 }
