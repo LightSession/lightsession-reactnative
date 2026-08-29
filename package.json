@@ -19,7 +19,7 @@
     "session-replay",
     "analytics"
   ],
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
