@@ -1,0 +1,55 @@
+# Uma tag `v*` publica no npm e abre o Release.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm install
+
+      # A guarda que os outros dois repositorios tambem carregam, pelo mesmo motivo: quem nomeia o
+      # que e publicado e o manifesto, nao a tag. Uma versao publicada sob o numero errado nao
+      # falha em lugar nenhum — e o npm nao deixa republicar a mesma versao depois.
+      - name: A tag e o package.json concordam
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./package.json').version")
+          echo "tag=$TAG package.json=$PKG"
+          [ "$TAG" = "$PKG" ] || { echo "::error::a tag diz $TAG e o package.json declara $PKG" && exit 1; }
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Publicar no npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error::NPM_TOKEN ausente" && exit 1
+          fi
+          npm publish --access public
+
+      - name: Criar o Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "${GITHUB_REF_NAME#v}" --generate-notes --verify-tag

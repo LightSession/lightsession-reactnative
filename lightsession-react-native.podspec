@@ -28,8 +28,12 @@ Pod::Spec.new do |s|
   # Brings in React itself and, under the new architecture, the generated spec this module conforms to.
   install_modules_dependencies(s)
 
-  # `~> 0.2`, e a faixa importa: `~> 0.1` aceitava qualquer 0.1.x e o SDK iOS esta em 0.2.x ha
-  # cinco releases. Com o podspec do SDK tambem corrigido para 0.2.5, esta linha e o que faz o
-  # CocoaPods resolver a versao que este bridge foi de fato compilado contra.
-  s.dependency "LightSession", "~> 0.2"
+  # `~> 0.3.0`, com o patch escrito, e a diferenca nao e estilistica: no CocoaPods `~> 0.3`
+  # significa `>= 0.3, < 1.0` e aceitaria qualquer minor futura, enquanto `~> 0.3.0` significa
+  # `>= 0.3.0, < 0.4.0`.
+  #
+  # Esta ponte chama `LightSessionBridge.recordRequest`, que nasceu na 0.3.0. A faixa anterior
+  # (`~> 0.2`) permitia resolver a 0.2.5, onde esse simbolo nao existe — o app compilaria a ponte
+  # contra um SDK sem ela e falharia no link, com um erro que nao menciona versao nenhuma.
+  s.dependency "LightSession", "~> 0.3.0"
 end

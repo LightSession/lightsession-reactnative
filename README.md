@@ -2,6 +2,20 @@
 
 Session recording and screen mapping for React Native, on **Android and iOS**.
 
+| Package | npm | React Native | Android API | iOS |
+| --- | --- | --- | --- | --- |
+| `lightsession-react-native` | [![npm](https://img.shields.io/npm/v/lightsession-react-native?style=for-the-badge&color=green)](https://www.npmjs.com/package/lightsession-react-native) | 0.76+ | 26 | 15.0 |
+
+```sh
+npm install lightsession-react-native
+cd ios && pod install
+```
+
+The floors come from the native SDKs this wraps — [Android](https://central.sonatype.com/artifact/io.lightsession/lightsession-android)
+and [iOS](https://cocoapods.org/pods/LightSession) — and a library's minimum is a ceiling on
+everyone who consumes it, so both are kept as low as their code allows. React Native 0.76 is where
+the new architecture became the default, which is what this module's TurboModule needs.
+
 Integrating it is JavaScript only. There is no `MainApplication.kt` to edit, no Gradle line to add and
 no Kotlin anywhere in your app: the native module is autolinked and takes its Application context from
 React itself.
