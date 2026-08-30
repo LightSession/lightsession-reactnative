@@ -43,11 +43,13 @@ android {
 }
 
 repositories {
-    // The SDK this wraps. `mavenLocal` first while it is unpublished; a released version resolves from
-    // GitHub Packages like any other dependency.
-    mavenLocal {
-        content { includeGroup("io.lightsession") }
-    }
+    // The SDK this wraps now resolves from Maven Central like any other dependency, so there is
+    // nothing special here any more.
+    //
+    // A `mavenLocal` entry lived here while it was unpublished, and it is deliberately gone: a
+    // stale artefact from somebody's `publishToMavenLocal` would shadow the released one silently,
+    // and the symptom is a build that works on one machine and not another with no message
+    // pointing at the cause.
     google()
     mavenCentral()
 }

@@ -1,0 +1,52 @@
+# Roda em todo push e todo PR, e sem segredo nenhum: um PR pode vir de um fork, e um workflow que
+# exponha segredo a codigo de terceiro ja entregou o segredo.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - run: npm install
+
+      # O `types` deste pacote aponta para `src/index.tsx`, ou seja o consumidor typecheca o nosso
+      # *fonte* dentro do build dele. Um erro aqui nao aparece para nos e sim para ele, no projeto
+      # dele — foi assim que `useRef()` sem argumento chegou a um app em React 19.
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # O conteudo do pacote e governado por `files` no package.json, e um caminho errado ali
+      # publica um tarball sem o lado nativo — que instala e falha so na hora de compilar o app.
+      - name: O tarball leva os dois lados nativos
+        run: |
+          npm pack --dry-run --json > /tmp/pack.json
+          python3 - <<'PY'
+          import json
+          arquivos = {f["path"] for f in json.load(open("/tmp/pack.json"))[0]["files"]}
+          exigidos = [
+              "package.json", "LICENSE", "README.md",
+              "src/index.tsx", "src/network.tsx", "src/navigation.tsx",
+              "lightsession-react-native.podspec",
+              "ios/LightSessionModule.mm", "ios/LightSessionRNBridge.swift",
+              "android/build.gradle",
+              "android/src/main/java/com/lightsession/reactnative/LightSessionModule.kt",
+          ]
+          faltando = [e for e in exigidos if e not in arquivos]
+          if faltando:
+              raise SystemExit("::error::o tarball nao levaria: " + ", ".join(faltando))
+          print(f"{len(arquivos)} arquivos, todos os exigidos presentes")
+          PY
