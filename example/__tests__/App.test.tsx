@@ -6,10 +6,10 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 
 // Stubbed at the public boundary, because the real module ends at TurboModuleRegistry and there is
-// no bridge under Jest. `lightsession-react-native/navigation` stays real on purpose — it is plain
+// no bridge under Jest. `@lightsession/react-native/navigation` stays real on purpose — it is plain
 // JavaScript over React Navigation's public API, and its `setScreen` import resolves to this same
 // mock, so the render below exercises the actual integration path an app uses.
-jest.mock('lightsession-react-native', () => {
+jest.mock('@lightsession/react-native', () => {
   const api = {
     init: jest.fn(),
     setScreen: jest.fn(),

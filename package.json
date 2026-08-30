@@ -1,5 +1,5 @@
 {
-  "name": "lightsession-react-native",
+  "name": "@lightsession/react-native",
   "version": "0.1.0",
   "description": "Screen mapping and session replay for React Native, on top of the LightSession Android SDK.",
   "main": "src/index.tsx",
@@ -44,5 +44,8 @@
     "@react-navigation/native": {
       "optional": true
     }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

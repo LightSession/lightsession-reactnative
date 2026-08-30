@@ -41,11 +41,11 @@ import {
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import LightSession from 'lightsession-react-native';
+import LightSession from '@lightsession/react-native';
 import {
   useLightSessionNavigation,
   type NavigationTracking,
-} from 'lightsession-react-native/navigation';
+} from '@lightsession/react-native/navigation';
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
