@@ -1,55 +1,111 @@
-# Uma tag `v*` publica no npm e abre o Release.
+# Publicar e um ato deliberado: este workflow so roda quando alguem clica em "Run workflow" e
+# escreve a versao. Nao existe gatilho por push nem por tag, de proposito — um `git push --tags`
+# distraido nao publica nada, e a tag passa a ser consequencia do release em vez de causa dele.
 name: release
 
 on:
-  push:
-    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versao a publicar, sem o "v" (ex.: 0.1.1). Tem que bater com o package.json.'
+        required: true
+        type: string
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release
   cancel-in-progress: false
 
 jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    # Quando este repositorio for publico, vale acrescentar aqui `environment: release` com required
+    # reviewers: o job passa a parar antes do publish e esperar aprovacao explicita. Em repositorio
+    # privado o GitHub nao oferece essa protecao fora dos planos pagos, e por isso a trava hoje e o
+    # proprio disparo manual.
     permissions:
+      # `id-token` e o que permite ao job pedir ao GitHub um token OIDC de vida curta, que e como o
+      # npm confirma que este publish veio deste repositorio e deste workflow. Sem esta linha o
+      # publish falha por falta de credencial, e nao existe segredo nenhum para compensar.
+      id-token: write
       contents: write
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      # Node 24 pelo npm que vem junto: o publish por OIDC precisa de npm >= 11.5.1, e o Node 22
+      # ainda traz a serie 10. Nao e preferencia por versao nova — abaixo disso o npm simplesmente
+      # nao sabe fazer a troca com o GitHub e volta a pedir token.
+      #
+      # E `setup-node@v6` porque o `registry-url` escreve um `.npmrc` que le `NODE_AUTH_TOKEN`.
+      # Nas versoes anteriores isso deixava no arquivo uma linha de autenticacao vazia quando a
+      # variavel nao existe, que e exatamente o nosso caso agora.
+      - uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - run: npm install
 
-      # A guarda que os outros dois repositorios tambem carregam, pelo mesmo motivo: quem nomeia o
-      # que e publicado e o manifesto, nao a tag. Uma versao publicada sob o numero errado nao
-      # falha em lugar nenhum — e o npm nao deixa republicar a mesma versao depois.
-      - name: A tag e o package.json concordam
+      # Tres conferencias antes de qualquer coisa irreversivel, porque publicar e irreversivel: o
+      # npm nao deixa republicar uma versao, nem sob numero corrigido. Quem nomeia o que sai e o
+      # manifesto, e o que a pessoa digitou no dispatch serve para confirmar a intencao, nao para
+      # decidir.
+      - name: Conferir a versao
+        id: check
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
+          IN="${{ inputs.version }}"
           PKG=$(node -p "require('./package.json').version")
-          echo "tag=$TAG package.json=$PKG"
-          [ "$TAG" = "$PKG" ] || { echo "::error::a tag diz $TAG e o package.json declara $PKG" && exit 1; }
+          NAME=$(node -p "require('./package.json').name")
+          echo "pedido=$IN  package.json=$PKG  pacote=$NAME"
+
+          [ "$IN" = "$PKG" ] || { echo "::error::voce pediu $IN e o package.json declara $PKG" && exit 1; }
+
+          if git rev-parse -q --verify "refs/tags/v$PKG" >/dev/null; then
+            echo "::error::a tag v$PKG ja existe — este commit ja foi publicado?" && exit 1
+          fi
+
+          if npm view "$NAME@$PKG" version >/dev/null 2>&1; then
+            echo "::error::$NAME@$PKG ja esta no registry e nao pode ser republicado" && exit 1
+          fi
+
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$PKG" >> "$GITHUB_OUTPUT"
 
       - name: Typecheck
         run: npx tsc --noEmit
 
+      # Sem `NODE_AUTH_TOKEN`, e de proposito. A autenticacao e o token OIDC pedido acima, que vale
+      # por esta execucao e so serve para este pacote — nao ha segredo guardado no repositorio para
+      # vazar, nem validade para renovar no meio de um release.
+      #
+      # `NPM_CONFIG_PROVENANCE` faz o npm publicar junto uma atestacao assinada dizendo de qual
+      # commit e de qual workflow o tarball saiu. Quem instala consegue verificar isso sem confiar
+      # em nos; e o que separa "diz que e oficial" de "da para provar que e".
       - name: Publicar no npm
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
         run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::error::NPM_TOKEN ausente" && exit 1
-          fi
+          echo "npm $(npm -v)"
           npm publish --access public
+
+      # Depois do publish, nao antes. Se algo falhar aqui, a tag e o Release se resolvem na mao;
+      # se a ordem fosse inversa e o publish falhasse, ficaria uma tag apontando para uma versao
+      # que nunca existiu.
+      - name: Marcar a tag
+        env:
+          V: ${{ steps.check.outputs.version }}
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git tag -a "v$V" -m "$V"
+          git push origin "v$V"
 
       - name: Criar o Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "${GITHUB_REF_NAME#v}" --generate-notes --verify-tag
+          V: ${{ steps.check.outputs.version }}
+        run: gh release create "v$V" --title "$V" --generate-notes --verify-tag
