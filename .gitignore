@@ -10,6 +10,10 @@ example/.bundle/
 example/ios/Pods/
 example/ios/build/
 example/ios/*.xcworkspace/xcuserdata/
+# E o do `.xcodeproj` tambem, que e outro caminho: guarda breakpoints, o ultimo esquema aberto e o
+# estado da janela de quem abriu o projeto. Nao quebra nada se vazar, mas suja o diff de todo mundo
+# com preferencia de editor de um so.
+example/ios/*.xcodeproj/xcuserdata/
 
 # Android
 #
@@ -23,6 +27,7 @@ example/android/build/
 example/android/app/build/
 example/android/local.properties
 *.keystore
+*.jks
 !debug.keystore
 
 # CocoaPods, and the gems that install it.
@@ -41,3 +46,12 @@ example/ios/*.xcworkspace/
 measurements/
 *.png
 !docs/*.png
+
+# Configuracao de ambiente.
+#
+# Nada aqui precisa de `.env` hoje, e e justamente por isso que a regra entra agora: o arquivo
+# aparece no dia em que alguem for testar contra um backend proprio, e nesse dia ninguem lembra de
+# conferir a lista de ignorados antes de commitar.
+.env
+.env.*
+!.env.example
