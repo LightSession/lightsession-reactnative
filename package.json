@@ -2,6 +2,14 @@
   "name": "@lightsession/react-native",
   "version": "0.1.0",
   "description": "Screen mapping and session replay for React Native, on top of the LightSession Android SDK.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LightSession/lightsession-reactnative.git"
+  },
+  "homepage": "https://github.com/LightSession/lightsession-reactnative#readme",
+  "bugs": {
+    "url": "https://github.com/LightSession/lightsession-reactnative/issues"
+  },
   "main": "src/index.tsx",
   "types": "src/index.tsx",
   "files": [
