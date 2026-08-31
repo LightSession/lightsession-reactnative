@@ -25,7 +25,7 @@ class MainApplication : Application(), ReactApplication {
     loadReactNative(this)
 
     // Nothing here. The SDK is started from JavaScript — see `index.js` — which is the whole point
-    // of the `lightsession-react-native` package: an app adopting it writes no Kotlin at all. This
+    // of the `@lightsession/react-native` package: an app adopting it writes no Kotlin at all. This
     // file is the React Native template's, unmodified.
   }
 }

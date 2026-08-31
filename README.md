@@ -1,13 +1,13 @@
-# lightsession-react-native
+# @lightsession/react-native
 
 Session recording and screen mapping for React Native, on **Android and iOS**.
 
 | Package | npm | React Native | Android API | iOS |
 | --- | --- | --- | --- | --- |
-| `lightsession-react-native` | [![npm](https://img.shields.io/npm/v/lightsession-react-native?style=for-the-badge&color=green)](https://www.npmjs.com/package/lightsession-react-native) | 0.76+ | 26 | 15.0 |
+| `@lightsession/react-native` | [![npm](https://img.shields.io/npm/v/@lightsession/react-native?style=for-the-badge&color=green)](https://www.npmjs.com/package/@lightsession/react-native) | 0.76+ | 26 | 15.0 |
 
 ```sh
-npm install lightsession-react-native
+npm install @lightsession/react-native
 cd ios && pod install
 ```
 
@@ -22,7 +22,7 @@ React itself.
 
 ```tsx
 // index.js — before registerComponent, so the recorder is running when the first screen renders.
-import LightSession from 'lightsession-react-native';
+import LightSession from '@lightsession/react-native';
 
 LightSession.init({
   apiKey: '…',
@@ -35,7 +35,7 @@ Then, if you use React Navigation:
 
 ```tsx
 import {NavigationContainer} from '@react-navigation/native';
-import {useLightSessionNavigation} from 'lightsession-react-native/navigation';
+import {useLightSessionNavigation} from '@lightsession/react-native/navigation';
 
 const tracking = useLightSessionNavigation();
 return <NavigationContainer {...tracking}>{/* … */}</NavigationContainer>;
