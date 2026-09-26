@@ -23,6 +23,9 @@
  *           inline panel                      their own; the panel is invisible to both platforms and
  *                                             is what `setSubScreen` exists for
  *
+ * And the errors case — `Errors` throws in each place a JavaScript error can come from, to see that
+ * each arrives with its own type and frames, and that a crash arrives once.
+ *
  * Navigation is React Navigation, tracked by spreading `useLightSessionNavigation()` onto the
  * container — the whole integration.
  */
@@ -75,6 +78,7 @@ function HomeScreen({navigation}: any) {
       <CaseButton label="Nested navigation" onPress={() => navigation.navigate('OuterHome')} />
       <CaseButton label="Sheet (modal route)" onPress={() => navigation.navigate('Sheet')} />
       <CaseButton label="Popups" onPress={() => navigation.navigate('Popups')} />
+      <CaseButton label="Errors" onPress={() => navigation.navigate('Errors')} />
     </ScrollView>
   );
 }
@@ -396,6 +400,104 @@ function PopupsScreen() {
 }
 
 /**
+ * Every way a JavaScript error happens in a React Native app, one button each.
+ *
+ * In a release build the first two end the app. That is React Native's doing, not the library's: it
+ * throws a native exception over any error nothing caught. The crash is written before that, and
+ * arrives on the next launch. The other three leave the app running.
+ *
+ * Each case throws from a function with a name of its own, because a function's name is what a release
+ * bundle keeps, and what the errors are grouped on.
+ */
+function ErrorsScreen() {
+  const [summaryBroken, setSummaryBroken] = useState(false);
+  const [receiptBroken, setReceiptBroken] = useState(false);
+
+  useEffect(() => {
+    demoActions.set('throw-in-handler', addToCart);
+    demoActions.set('throw-in-render', () => setSummaryBroken(true));
+    demoActions.set('throw-in-boundary', () => setReceiptBroken(true));
+    demoActions.set('reject', () => {
+      loadReceipt();
+    });
+    demoActions.set('report', parseTotal);
+    return () => {
+      ['throw-in-handler', 'throw-in-render', 'throw-in-boundary', 'reject', 'report'].forEach(k =>
+        demoActions.delete(k),
+      );
+    };
+  }, []);
+
+  return (
+    <ScrollView style={styles.screen} contentContainerStyle={styles.listBody}>
+      <Text style={styles.title}>Errors</Text>
+      <Text style={styles.body}>
+        The first two end the app in a release build, as React Native does with any error nothing
+        caught. The other three leave it running.
+      </Text>
+
+      <CaseButton first label="Throw in a handler" onPress={addToCart} />
+      <CaseButton label="Throw while rendering" onPress={() => setSummaryBroken(true)} />
+      <CaseButton label="Throw inside an error boundary" onPress={() => setReceiptBroken(true)} />
+      <CaseButton label="Reject a promise" onPress={() => loadReceipt()} />
+      <CaseButton label="Report a caught error" onPress={parseTotal} />
+
+      {summaryBroken && <OrderSummary />}
+      <ReceiptBoundary>{receiptBroken && <ReceiptCard />}</ReceiptBoundary>
+    </ScrollView>
+  );
+}
+
+type Order = {customer: {name: string}; items?: string[]};
+
+/** Escapes an event handler: React Native's global handler. */
+function addToCart() {
+  const order: Order = {customer: {name: 'Ada'}};
+  order.items!.push('coffee');
+}
+
+/** Escapes a render with no error boundary above it: React's uncaught-error callback. */
+function OrderSummary(): React.JSX.Element {
+  const order = undefined as unknown as Order;
+  return <Text style={styles.body}>{order.customer.name}</Text>;
+}
+
+/** Throws inside the boundary below, which shows a fallback instead. */
+function ReceiptCard(): React.JSX.Element {
+  throw new RangeError('receipt 42 has no lines');
+}
+
+class ReceiptBoundary extends React.Component<{children?: React.ReactNode}, {failed: boolean}> {
+  state = {failed: false};
+
+  static getDerivedStateFromError() {
+    return {failed: true};
+  }
+
+  render() {
+    return this.state.failed ? (
+      <Text style={styles.body}>The receipt could not be shown.</Text>
+    ) : (
+      this.props.children
+    );
+  }
+}
+
+/** Rejects with nobody listening. React Native says nothing about this in a release build. */
+async function loadReceipt(): Promise<void> {
+  throw new Error('the receipt service answered 503');
+}
+
+/** Caught by the app, and reported because the app asked. */
+function parseTotal() {
+  try {
+    JSON.parse('{"total": ');
+  } catch (error) {
+    LightSession.captureException(error, {step: 'receipt'});
+  }
+}
+
+/**
  * What the scripted walk can do besides navigate. Screens put their own entries here while mounted;
  * the walk calls them by `do:<name>`. A Map because registration must be undone on unmount — a demo
  * action firing a setState on an unmounted screen is the kind of noise this sample must not teach.
@@ -483,6 +585,7 @@ export default function App() {
         <Stack.Screen name="Inner" component={InnerNavigator} options={{headerShown: false}} />
         <Stack.Screen name="Sheet" component={SheetScreen} options={{presentation: 'modal'}} />
         <Stack.Screen name="Popups" component={PopupsScreen} />
+        <Stack.Screen name="Errors" component={ErrorsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -74,6 +74,27 @@ export interface Spec extends TurboModule {
     responseBytes: number,
     error: string,
   ): void;
+
+  /**
+   * Records one JavaScript error, in its own terms: its type, its message and its frames, each frame
+   * `{module, function, file?, line?, inApp}` as the SDKs' `ErrorFrame` takes it.
+   *
+   * The one synchronous method here, and not for speed. In a release build React Native ends the
+   * process over an error nothing caught, by throwing a native exception as soon as its handler
+   * returns — so a crash reported asynchronously is one the process may not live to write. The
+   * return value means nothing: a return type is what makes the codegen generate a synchronous call.
+   *
+   * `handled: false` says the error is a crash, and the SDK takes it as the process's death: it is
+   * written before this returns, and the native exception that follows is not recorded again.
+   */
+  recordError(
+    type: string,
+    message: string,
+    frames: Array<Object>,
+    handled: boolean,
+    mechanism: string,
+    attributes: Object,
+  ): boolean;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('LightSession');

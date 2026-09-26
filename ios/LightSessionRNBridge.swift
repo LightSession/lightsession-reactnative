@@ -13,8 +13,8 @@ import LightSession
 /// `#import <LightSession/LightSession-Swift.h>` (file not found) and `@import LightSession` (modules
 /// disabled) — and the third is the one the platform actually supports.
 ///
-/// Nothing is translated here. `LightSessionBridge` in the SDK does the dictionary reading and is tested there;
-/// duplicating it would put two readings of one config a rename apart.
+/// Nothing is translated here but errors. `LightSessionBridge` in the SDK does the dictionary reading and is tested
+/// there; duplicating it would put two readings of one config a rename apart.
 @objc(LSRNBridge)
 public final class LSRNBridge: NSObject {
     @objc public static func start(_ config: [String: Any], verbose: Bool) {
@@ -47,6 +47,38 @@ public final class LSRNBridge: NSObject {
             requestBytes: requestBytes,
             responseBytes: responseBytes,
             error: error
+        )
+    }
+
+    /// One JavaScript error. The frames arrive as dictionaries, the shape the codegen gives an array of
+    /// objects, and become the SDK's `ErrorFrame` here — the one translation this file does, because the
+    /// SDK takes errors typed and has no dictionary reading for them to forward to.
+    ///
+    /// The thread is `js`: it is where the error was thrown, whatever thread this runs on.
+    @objc public static func recordError(
+        _ type: String,
+        message: String?,
+        frames: [[String: Any]],
+        handled: Bool,
+        mechanism: String,
+        attributes: [String: Any]
+    ) {
+        LightSession.recordError(
+            type: type,
+            message: message,
+            frames: frames.map { frame in
+                ErrorFrame(
+                    module: frame["module"] as? String ?? "",
+                    function: frame["function"] as? String ?? "",
+                    file: (frame["file"] as? String).flatMap { $0.isEmpty ? nil : $0 },
+                    line: (frame["line"] as? NSNumber)?.intValue,
+                    inApp: (frame["inApp"] as? NSNumber)?.boolValue ?? false
+                )
+            },
+            handled: handled,
+            mechanism: mechanism,
+            thread: "js",
+            attributes: attributes
         )
     }
 }

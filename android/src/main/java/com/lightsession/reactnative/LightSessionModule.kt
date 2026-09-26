@@ -5,10 +5,12 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 import com.lightsession.LightSession
 import com.lightsession.LightSessionConfig
+import com.lightsession.errors.ErrorFrame
 
 /**
  * The bridge, and it is thin because almost nothing needs to cross it.
@@ -106,6 +108,7 @@ class LightSessionModule(context: ReactApplicationContext) :
             captureNetwork = map.boolOr("captureNetwork", defaults.captureNetwork),
             networkSampleRate =
                 map.doubleOr("networkSampleRate", defaults.networkSampleRate),
+            captureErrors = map.boolOr("captureErrors", defaults.captureErrors),
             // Not a choice. See the kdoc.
             screensReportedByHost = true,
         )
@@ -155,6 +158,54 @@ class LightSessionModule(context: ReactApplicationContext) :
             error = error ?: "",
         )
     }
+
+    /**
+     * One JavaScript error, in its own terms.
+     *
+     * Synchronous, and on the JavaScript thread, because of what comes next: in a release build
+     * React Native throws a `JavascriptException` as soon as its handler returns, and the process
+     * ends. With `handled` false the SDK writes the crash to disk before this returns, and takes it
+     * as that death — the `JavascriptException` is not recorded a second time. The `Boolean` is only
+     * what makes the codegen generate a synchronous method.
+     *
+     * The thread is named `js`: it is where the error was thrown, whatever thread this runs on.
+     */
+    override fun recordError(
+        type: String?,
+        message: String?,
+        frames: ReadableArray?,
+        handled: Boolean,
+        mechanism: String?,
+        attributes: ReadableMap?,
+    ): Boolean {
+        if (type.isNullOrBlank()) return false
+        LightSession.getInstance().recordError(
+            type = type,
+            message = message?.takeIf { it.isNotEmpty() },
+            frames = frames?.toErrorFrames().orEmpty(),
+            handled = handled,
+            mechanism = mechanism?.takeIf { it.isNotBlank() } ?: "manual",
+            thread = "js",
+            attributes = attributes?.toHashMap().orEmpty(),
+        )
+        return true
+    }
+
+    private fun ReadableArray.toErrorFrames(): List<ErrorFrame> =
+        (0 until size()).mapNotNull { index ->
+            val frame = getMap(index) ?: return@mapNotNull null
+            ErrorFrame(
+                module = frame.rawString("module"),
+                function = frame.rawString("function"),
+                file = frame.stringOrNull("file"),
+                line = if (frame.hasKey("line") && !frame.isNull("line")) frame.getDouble("line").toInt() else null,
+                inApp = frame.boolOr("inApp", false),
+            )
+        }
+
+    /** A string as sent, empty when absent: an empty module is how a frame with no class is sent. */
+    private fun ReadableMap.rawString(key: String): String =
+        if (hasKey(key) && !isNull(key)) getString(key).orEmpty() else ""
 
     /** Runs now if already on the main thread, and posts if not. */
     private inline fun runOnMain(crossinline block: () -> Unit) {
