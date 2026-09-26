@@ -66,6 +66,18 @@ export interface LightSessionOptions {
   sessionTimeoutMs?: number;
 
   /**
+   * Report errors: the native crashes the SDKs catch, and JavaScript errors in their own terms —
+   * their type, their message and their frames. **On by default.**
+   *
+   * On the JavaScript side that is what escapes an event handler, a timer or a render, what an error
+   * boundary caught, and a promise rejection nothing handled; each is reported and then handed on to
+   * React Native exactly as before, so the red box and the crash happen as they always did. In a
+   * release build an error React Native ends the app over is a crash, and it is recorded once — not
+   * again as the native exception React Native ends it with.
+   */
+  captureErrors?: boolean;
+
+  /**
    * Whether the app's own HTTP requests are recorded. **Off by default**, and the only option here
    * that is.
    *
@@ -124,21 +136,28 @@ export {captureNetwork};
 export type {StopCapturing} from './network';
 export type {ErrorAttributes} from './errors';
 
+let initialized = false;
+let capturesErrors = false;
+
 export function init(options: LightSessionOptions): void {
   // Before the native call, so a capture installed immediately after `init` already knows what
   // to skip.
   rememberUrls(options.ingestUrl, options.apiUrl);
   NativeLightSession.init(options);
-  installErrorCapture();
+  // The first call decides, as it does natively: the SDK keeps the first configuration.
+  if (initialized) return;
+  initialized = true;
+  capturesErrors = options.captureErrors !== false;
+  if (capturesErrors) installErrorCapture();
 }
 
 /**
  * Reports an error the app caught and wants on the record.
  *
- * The uncaught ones report themselves. This is for the errors no hook can hear because the app
- * handled them: the payment failure a `catch` turned into a message, the retry that gave up. They
- * are the errors that show up in a replay as someone tapping the same button over and over with
- * nothing in the log to say why.
+ * The uncaught ones report themselves — see {@link LightSessionOptions.captureErrors}. This is for the
+ * errors no hook can hear because the app handled them: the payment failure a `catch` turned into a
+ * message, the retry that gave up. They are the errors that show up in a replay as someone tapping
+ * the same button over and over with nothing in the log to say why.
  *
  * ```tsx
  * try {
@@ -149,10 +168,11 @@ export function init(options: LightSessionOptions): void {
  * }
  * ```
  *
- * The frames are the error's own, from where it was created. Does nothing before `init`: the SDK
- * ignores it.
+ * The frames are the error's own, from where it was created. Does nothing before `init`, or with
+ * `captureErrors` off.
  */
 export function captureException(error: unknown, attributes: ErrorAttributes = {}): void {
+  if (!capturesErrors) return;
   reportError(error, 'manual', false, attributes);
 }
 

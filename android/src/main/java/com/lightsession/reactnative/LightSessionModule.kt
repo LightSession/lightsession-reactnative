@@ -108,6 +108,7 @@ class LightSessionModule(context: ReactApplicationContext) :
             captureNetwork = map.boolOr("captureNetwork", defaults.captureNetwork),
             networkSampleRate =
                 map.doubleOr("networkSampleRate", defaults.networkSampleRate),
+            captureErrors = map.boolOr("captureErrors", defaults.captureErrors),
             // Not a choice. See the kdoc.
             screensReportedByHost = true,
         )
