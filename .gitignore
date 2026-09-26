@@ -46,6 +46,10 @@ example/ios/*.xcworkspace/
 measurements/
 *.png
 !docs/*.png
+# Except the icons the example's Android build compiles against: the manifest names
+# `@mipmap/ic_launcher` and `@mipmap/ic_launcher_round`, and without them no fresh clone could build
+# the example — it only ever built on a machine that still had them from the template.
+!example/android/app/src/main/res/mipmap-*/*.png
 
 # Configuracao de ambiente.
 #

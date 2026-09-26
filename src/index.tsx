@@ -12,7 +12,7 @@ import NativeLightSession from './NativeLightSession';
  * and a single view controller on iOS, and its screens are a JavaScript concern either way. That is what this
  * library is for.
  *
- * React Navigation support lives in `lightsession-react-native/navigation` rather than here, so an app
+ * React Navigation support lives in `@lightsession/react-native/navigation` rather than here, so an app
  * using a different navigator — or calling [setScreen] itself — never imports it.
  */
 
@@ -97,7 +97,7 @@ export interface LightSessionOptions {
  * Starts the SDK. Call this once, before the app renders.
  *
  * ```tsx
- * import LightSession from 'lightsession-react-native';
+ * import LightSession from '@lightsession/react-native';
  *
  * LightSession.init({
  *   apiKey: '…',
