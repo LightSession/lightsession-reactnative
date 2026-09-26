@@ -26,14 +26,16 @@ Pod::Spec.new do |s|
   # Brings in React itself and, under the new architecture, the generated spec this module conforms to.
   install_modules_dependencies(s)
 
-  # `~> 0.8.0`, com o patch escrito, e a diferenca nao e estilistica: no CocoaPods `~> 0.8`
-  # significa `>= 0.8, < 1.0` e aceitaria qualquer minor futura, enquanto `~> 0.8.0` significa
-  # `>= 0.8.0, < 0.9.0`.
+  # `~> 0.8.2`, com o patch escrito, e a diferenca nao e estilistica: no CocoaPods `~> 0.8`
+  # significa `>= 0.8, < 1.0` e aceitaria qualquer minor futura, enquanto `~> 0.8.2` significa
+  # `>= 0.8.2, < 0.9.0`.
   #
   # O minimo nao vem da ponte, que so precisa do que existe desde a 0.3.0, e sim do que o SDK passou
   # a fazer certo depois dela e que um app React Native deixava de receber enquanto isto ficou em
   # `~> 0.3.0`: a sessao termina quando o app vai para o background (0.4.0), e uma parte de uma tela
   # declarada com `setSubScreen` sai com o tipo da tela a que pertence (0.6.0) — medido no exemplo, o
-  # painel e o Modal da tela Popups saiam como UIKIT.
-  s.dependency "LightSession", "~> 0.8.0"
+  # painel e o Modal da tela Popups saiam como UIKIT. E, na 0.8.2, um crash de JavaScript conta uma
+  # vez so, em vez de chegar de novo como o `RCTFatalException` com que o React Native encerra o app,
+  # e a ponte le `captureErrors`, que antes descartava.
+  s.dependency "LightSession", "~> 0.8.2"
 end

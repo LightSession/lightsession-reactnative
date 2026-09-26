@@ -89,7 +89,9 @@ reason to know they are looking at a React Native app — and measurement says t
 The example app — screens of text, a form, a list, a web page, tabs, a nested stack, a modal route,
 a Modal, an Alert, a declared panel and a screen that throws in each place a JavaScript error can
 come from — walked end to end against a local backend, as a release build on an Android emulator
-(`io.lightsession:lightsession-android` 0.39.1) and on an iOS simulator (`LightSession` 0.8.1):
+and on an iOS simulator. The walk ran on `io.lightsession:lightsession-android` 0.39.1 and
+`LightSession` 0.8.1, the errors on 0.39.2 and 0.8.2, the versions this package requires; what changed
+between them is error capture, and a wireframe an embedder describes, which React Native does not:
 
 | Question | Android | iOS |
 | --- | --- | --- |
@@ -102,7 +104,7 @@ come from — walked end to end against a local backend, as a release build on a
 | Are touches recorded? | **Yes** — 17 in an earlier run by hand; this walk was scripted | |
 | Are the app's requests recorded? | **Yes** — path collapsed, query dropped | **Yes** |
 | Are JavaScript errors reported as JavaScript errors? | **Yes** — type, message, frames | **Yes** |
-| Does a JavaScript crash arrive once? | **No** on 0.39.1 — also as `JavascriptException`; once on the SDK that counts it once | **No** on 0.8.1 — also as `RCTFatalException`; likewise |
+| Does a JavaScript crash arrive once? | **Yes** — on 0.39.1 it also arrived as `JavascriptException` | **Yes** — on 0.8.1 it also arrived as `RCTFatalException` |
 | Do buttons read as buttons? | **No**, as predicted — see below | |
 
 That last one is a confirmed prediction of failure and worth keeping in writing: RN has no
@@ -118,7 +120,7 @@ screenshot. From 0.37.0 a web view is covered whole.
 ## What had to change in the SDK
 
 Two real bugs, both of which the Android path could hide and React Native could not, fixed in the
-Android SDK's 0.13.0 — long since passed; this package requires 0.39.1 on Android and 0.8 on iOS.
+Android SDK's 0.13.0 — long since passed; this package requires 0.39.2 on Android and 0.8.2 on iOS.
 
 1. **The wireframe was captured before the app existed.** The skeleton was generated 238 ms *before*
    `Running "example"` appeared in the log, producing a blank frame. The first attempted fix settled
