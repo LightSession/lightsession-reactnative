@@ -46,6 +46,22 @@ Navigation's own screen-tracking guide uses. Public API, not internals, so it do
 their internals move. An app on a different navigator calls `setScreen(name)` itself and skips that
 import entirely.
 
+JavaScript errors report themselves, with their own type, message and frames: what escapes an event
+handler, a timer or a render, what an error boundary caught, and a promise rejection nothing handled.
+Each is then handed on to React Native unchanged, so the red box and the crash happen as before. An
+error your code catches can be reported too:
+
+```tsx
+try {
+  await checkout();
+} catch (error) {
+  LightSession.captureException(error, {step: 'payment'});
+  showRetry();
+}
+```
+
+`captureErrors: false` in `init` turns error capture off, the native crash capture included.
+
 ## Why this exists, and why it is small
 
 The Android SDK maps screens by watching the platform: an Activity resumes, a `NavHostFragment`
@@ -71,9 +87,9 @@ reason to know they are looking at a React Native app — and measurement says t
 ## What was measured
 
 The example app — screens of text, a form, a list, a web page, tabs, a nested stack, a modal route,
-a Modal, an Alert and a declared panel — walked end to end against a local backend, as a release
-build on an Android emulator (`io.lightsession:lightsession-android` 0.39.1) and on an iOS simulator
-(`LightSession` 0.8.1):
+a Modal, an Alert, a declared panel and a screen that throws in each place a JavaScript error can
+come from — walked end to end against a local backend, as a release build on an Android emulator
+(`io.lightsession:lightsession-android` 0.39.1) and on an iOS simulator (`LightSession` 0.8.1):
 
 | Question | Android | iOS |
 | --- | --- | --- |
@@ -85,7 +101,8 @@ build on an Android emulator (`io.lightsession:lightsession-android` 0.39.1) and
 | Do replay frames arrive? | **Yes** | **Yes** |
 | Are touches recorded? | **Yes** — 17 in an earlier run by hand; this walk was scripted | |
 | Are the app's requests recorded? | **Yes** — path collapsed, query dropped | **Yes** |
-| Are JavaScript errors reported as JavaScript errors? | **No** — see the limitations | **No** |
+| Are JavaScript errors reported as JavaScript errors? | **Yes** — type, message, frames | **Yes** |
+| Does a JavaScript crash arrive once? | **No** on 0.39.1 — also as `JavascriptException`; once on the SDK that counts it once | **No** on 0.8.1 — also as `RCTFatalException`; likewise |
 | Do buttons read as buttons? | **No**, as predicted — see below | |
 
 That last one is a confirmed prediction of failure and worth keeping in writing: RN has no
@@ -117,11 +134,15 @@ Android SDK's 0.13.0 — long since passed; this package requires 0.39.1 on Andr
 
 ## Honest limitations
 
-- **JavaScript errors are not reported as JavaScript errors.** An uncaught one ends a release build, and the
-  native SDK records that crash as the platform's wrapper around it — `JavascriptException` on Android,
-  `RCTFatalException` with the message in its type on iOS — with only React Native's native frames. So on
-  Android every JavaScript crash lands in one group, and on iOS every distinct message in its own. A
-  rejected promise nobody handles, or an error the app catches, is not reported at all.
+- **A JavaScript error's frames are the bundle's, not your source files'.** Hermes keeps function names in a
+  release build, so each frame is named — `addToCart`, `OrderSummary` — but it points into one bundle with
+  no source file or line, and no frame is marked as the app's own, because nothing in a bundle tells the
+  app's functions from React's. The server groups on the first frames, so two errors of one type thrown from
+  two functions that share a name, two `onPress` handlers, share a group. Reading the frames back to source
+  files needs the build's source map, and that is not done yet.
+- **Unhandled rejections are tracked through Hermes**, React Native's engine by default, and not on JSC.
+  Hermes keeps one rejection tracker: a tracker another library enabled before `init` is replaced, and
+  whichever library enables tracking last is the one that hears rejections.
 - **`identify` records the user id on iOS and drops the traits**, and logs that it did. Android stores both.
 - **A native splash shown before the JS bundle runs is not recorded**, because `init` runs when the
   bundle runs. Initialising in `MainApplication` still catches it, at the cost of the Kotlin this
@@ -159,7 +180,8 @@ Two details worth knowing, because both were decisions rather than defaults:
 ## Layout
 
 - `src/` — the public API. `index.tsx` is the typed surface, `NativeLightSession.ts` the codegen spec,
-  `navigation.tsx` the React Navigation helper (a separate module so it is only imported when used).
+  `navigation.tsx` the React Navigation helper (a separate module so it is only imported when used),
+  `errors.tsx` the JavaScript error capture.
 - `android/` — the TurboModule. Thin delegation with no state of its own; two copies of one truth is
   how they come to disagree.
 - `example/` — an RN app whose `MainApplication.kt` is the template's, **untouched**. That is the
