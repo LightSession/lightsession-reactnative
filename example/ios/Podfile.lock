@@ -3,10 +3,10 @@ PODS:
   - hermes-engine (250829098.0.16):
     - hermes-engine/Pre-built (= 250829098.0.16)
   - hermes-engine/Pre-built (250829098.0.16)
-  - LightSession (0.8.1)
+  - LightSession (0.8.2)
   - lightsession-react-native (0.1.0):
     - hermes-engine
-    - LightSession (~> 0.8.0)
+    - LightSession (~> 0.8.2)
     - RCTRequired
     - RCTTypeSafety
     - React-Core
@@ -2237,8 +2237,8 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   FBLazyVector: 3c3be9a019176b5699455f7f66c5444b78a411c6
   hermes-engine: d2aea1f72c02e5429c436f5b301cdd6bf63b2dcd
-  LightSession: 3cd4f68af9d8008d91b3ae01ca7225bb0ef4ce2d
-  lightsession-react-native: 474fd7460d286356e924a530c44e865534f54e17
+  LightSession: 531680dcb00aba103c89f26f9c652ef42a9494e5
+  lightsession-react-native: efcb0cf0a0295dfea2130877dd69be128e949eb9
   RCTDeprecation: bccb6545c26db881ecddfd83a3f9ea82aba1605f
   RCTRequired: b2f74764d596fc0051f00fee94b49bf41a6f7f5a
   RCTSwiftUI: c6d6a31b849b9dfa64c33b55dc91ac15dd55774c
