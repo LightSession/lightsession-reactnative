@@ -48,7 +48,8 @@ type Mechanism =
   | 'global_handler'
   | 'react_render'
   | 'error_boundary'
-  | 'unhandled_rejection';
+  | 'unhandled_rejection'
+  | 'manual';
 
 /** One frame, in the shape the SDKs' `ErrorFrame` takes. */
 type Frame = {

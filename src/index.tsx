@@ -118,10 +118,11 @@ export interface LightSessionOptions {
  */
 import {captureNetwork} from './network';
 import {rememberUrls} from './internal';
-import {installErrorCapture} from './errors';
+import {installErrorCapture, reportError, type ErrorAttributes} from './errors';
 
 export {captureNetwork};
 export type {StopCapturing} from './network';
+export type {ErrorAttributes} from './errors';
 
 export function init(options: LightSessionOptions): void {
   // Before the native call, so a capture installed immediately after `init` already knows what
@@ -129,6 +130,30 @@ export function init(options: LightSessionOptions): void {
   rememberUrls(options.ingestUrl, options.apiUrl);
   NativeLightSession.init(options);
   installErrorCapture();
+}
+
+/**
+ * Reports an error the app caught and wants on the record.
+ *
+ * The uncaught ones report themselves. This is for the errors no hook can hear because the app
+ * handled them: the payment failure a `catch` turned into a message, the retry that gave up. They
+ * are the errors that show up in a replay as someone tapping the same button over and over with
+ * nothing in the log to say why.
+ *
+ * ```tsx
+ * try {
+ *   await checkout();
+ * } catch (error) {
+ *   LightSession.captureException(error, {step: 'payment'});
+ *   showRetry();
+ * }
+ * ```
+ *
+ * The frames are the error's own, from where it was created. Does nothing before `init`: the SDK
+ * ignores it.
+ */
+export function captureException(error: unknown, attributes: ErrorAttributes = {}): void {
+  reportError(error, 'manual', false, attributes);
 }
 
 /** Reports the current screen. Repeats are ignored natively, so calling it often is free. */
@@ -179,4 +204,5 @@ export default {
   setSubScreen,
   clearSubScreen,
   captureNetwork,
+  captureException,
 };
