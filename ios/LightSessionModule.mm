@@ -142,6 +142,31 @@ RCT_EXPORT_MODULE(LightSession)
                         error:error ?: @""];
 }
 
+/// One JavaScript error, in its own terms.
+///
+/// Synchronous — a return type is what makes the codegen generate that — and so it runs on the JavaScript
+/// thread, not on the main queue above. That is the point: in a release build React Native raises
+/// `RCTFatalException` as soon as its handler returns, and a crash queued behind the main thread is one the
+/// process never gets to. With `handled` false the SDK writes it before this returns, and takes it as that
+/// death, so the `RCTFatalException` is not recorded a second time.
+- (NSNumber *)recordError:(NSString *)type
+                  message:(NSString *)message
+                   frames:(NSArray *)frames
+                  handled:(BOOL)handled
+                mechanism:(NSString *)mechanism
+               attributes:(NSDictionary *)attributes {
+    if (type.length == 0) {
+        return @NO;
+    }
+    [LSRNBridge recordError:type
+                    message:message.length > 0 ? message : nil
+                     frames:frames ?: @[]
+                    handled:handled
+                  mechanism:mechanism.length > 0 ? mechanism : @"manual"
+                 attributes:attributes ?: @{}];
+    return @YES;
+}
+
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params {
     return std::make_shared<facebook::react::NativeLightSessionSpecJSI>(params);

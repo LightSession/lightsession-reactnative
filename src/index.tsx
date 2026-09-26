@@ -118,6 +118,7 @@ export interface LightSessionOptions {
  */
 import {captureNetwork} from './network';
 import {rememberUrls} from './internal';
+import {installErrorCapture} from './errors';
 
 export {captureNetwork};
 export type {StopCapturing} from './network';
@@ -127,6 +128,7 @@ export function init(options: LightSessionOptions): void {
   // to skip.
   rememberUrls(options.ingestUrl, options.apiUrl);
   NativeLightSession.init(options);
+  installErrorCapture();
 }
 
 /** Reports the current screen. Repeats are ignored natively, so calling it often is free. */
