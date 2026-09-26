@@ -70,29 +70,38 @@ reason to know they are looking at a React Native app — and measurement says t
 
 ## What was measured
 
-A stock RN 0.86 app with three screens (`Home`, `Form`, `List`) on a React Navigation stack, recorded
-end to end against a local backend:
+The example app — screens of text, a form, a list, a web page, tabs, a nested stack, a modal route,
+a Modal, an Alert and a declared panel — walked end to end against a local backend, as a release
+build on an Android emulator (`io.lightsession:lightsession-android` 0.39.1) and on an iOS simulator
+(`LightSession` 0.8.1):
 
-| Question | Result |
-| --- | --- |
-| Are the screens identified? | **Yes** — three screens, each `kind = REACT_NATIVE` |
-| Is the wireframe legible, or a grey slab? | **Legible** — one skeleton per screen |
-| Does the real-screen capture arrive? | **Yes** — one screenshot per screen |
-| Is masking applied to RN text? | **Yes**, with no RN-specific code |
-| Are flows built? | **Yes** — `Home → Form → List` |
-| Are touches recorded? | **Yes** — 17 interactions (3 taps, 14 swipes) in one run |
-| Do replay frames arrive? | **Yes** — 431 frames |
-| Do buttons read as buttons? | **No**, as predicted — see below |
+| Question | Android | iOS |
+| --- | --- | --- |
+| Are the screens identified, as React Native? | **Yes** — every one `REACT_NATIVE` | **Yes**, the panel and the Modal included |
+| Is the wireframe legible, or a grey slab? | **Legible** | **Legible** |
+| Does the real-screen capture arrive? | **Yes**, one per screen | **Yes**, one per screen |
+| Is RN text covered, with no RN-specific code? | **Yes** — the form's fields included | **Yes** |
+| Is a web page covered? | **Yes**, whole | **Yes**, whole |
+| Do replay frames arrive? | **Yes** | **Yes** |
+| Are touches recorded? | **Yes** — 17 in an earlier run by hand; this walk was scripted | |
+| Are the app's requests recorded? | **Yes** — path collapsed, query dropped | **Yes** |
+| Are JavaScript errors reported as JavaScript errors? | **No** — see the limitations | **No** |
+| Do buttons read as buttons? | **No**, as predicted — see below | |
 
 That last one is a confirmed prediction of failure and worth keeping in writing: RN has no
 `android.widget.Button`, so a `Pressable` classifies as a container. It is drawn and masked correctly;
 it is simply not *labelled* a button in the wireframe. A gap that is understood is not the same as one
 a customer discovers.
 
+The web page is the case that decided the SDK versions this package requires. A WebView draws its page
+itself, so nothing on it is a view the mask scan can read; with the Android SDK this package pinned
+until then, 0.28.0, the page's name, address and card digits were legible in the screen map's stored
+screenshot. From 0.37.0 a web view is covered whole.
+
 ## What had to change in the SDK
 
-Two real bugs, both of which the Android path could hide and React Native could not. Both are fixed in
-`com.lightsession:lightsession-android:0.13.0`, which this package requires.
+Two real bugs, both of which the Android path could hide and React Native could not, fixed in the
+Android SDK's 0.13.0 — long since passed; this package requires 0.39.1 on Android and 0.8 on iOS.
 
 1. **The wireframe was captured before the app existed.** The skeleton was generated 238 ms *before*
    `Running "example"` appeared in the log, producing a blank frame. The first attempted fix settled
@@ -108,15 +117,19 @@ Two real bugs, both of which the Android path could hide and React Native could 
 
 ## Honest limitations
 
+- **JavaScript errors are not reported as JavaScript errors.** An uncaught one ends a release build, and the
+  native SDK records that crash as the platform's wrapper around it — `JavascriptException` on Android,
+  `RCTFatalException` with the message in its type on iOS — with only React Native's native frames. So on
+  Android every JavaScript crash lands in one group, and on iOS every distinct message in its own. A
+  rejected promise nobody handles, or an error the app catches, is not reported at all.
 - **`identify` records the user id on iOS and drops the traits**, and logs that it did. Android stores both.
-- **The `LightSession` pod is not published anywhere yet.** `npm install` followed by `pod install` cannot
-  resolve it: the example works because its Podfile points at the SDK by path. This is the one thing that stops
-  the iOS half from being usable outside this repository, and it is a publishing decision rather than code.
 - **A native splash shown before the JS bundle runs is not recorded**, because `init` runs when the
   bundle runs. Initialising in `MainApplication` still catches it, at the cost of the Kotlin this
   package exists to avoid; it can be offered as an option rather than a requirement.
-- **No tests yet.** The evidence above is measurement on a device, which is the right kind of evidence
-  for "does the platform cooperate" and the wrong kind for "does this keep working".
+- **No tests beyond CI building the example.** CI compiles the example on both platforms with its
+  JavaScript bundled, which catches a native side that no longer builds and an import that no longer
+  resolves; the evidence above is measurement on a device, the right kind for "does the platform
+  cooperate" and the wrong kind for "does this keep working".
 
 ## The iOS half
 
@@ -140,9 +153,8 @@ Two details worth knowing, because both were decisions rather than defaults:
   through the bridge arrived labelled `SWIFTUI`, which is a lie that reads as a bug. The word matches Android's,
   so one app's two builds land on one node in the graph rather than on two that differ only by platform.
 - **This pod depends on the SDK, it does not contain it.** `s.dependency "LightSession"`, mirroring Android's
-  `implementation "com.lightsession:lightsession-android"`. Vendoring a copy of an SDK is a second thing to keep
-  in step, and it never is. `LightSession` is not on a public spec repo yet, so the example's Podfile takes it
-  by path — there is nothing clever about that and nothing hidden.
+  `implementation "io.lightsession:lightsession-android"`. Vendoring a copy of an SDK is a second thing to keep
+  in step, and it never is. `LightSession` comes from CocoaPods trunk, so an app adds nothing to its Podfile.
 
 ## Layout
 
