@@ -47,7 +47,8 @@ export type ErrorAttributes = Record<string, string | number | boolean>;
 type Mechanism =
   | 'global_handler'
   | 'react_render'
-  | 'error_boundary';
+  | 'error_boundary'
+  | 'unhandled_rejection';
 
 /** One frame, in the shape the SDKs' `ErrorFrame` takes. */
 type Frame = {
@@ -69,17 +70,30 @@ type ExceptionsManager = {
   handleException?: (error: unknown, isFatal: boolean) => void;
 };
 
+type RejectionOptions = {
+  allRejections?: boolean;
+  onUnhandled?: (id: number, rejection: unknown) => void;
+  onHandled?: (id: number, rejection?: unknown) => void;
+};
+
 /** What a native error keeps of a message; the rest is cut there anyway, and need not cross. */
 const MAX_TEXT = 2048;
 
 let installed = false;
 let crashReported = false;
 
+/**
+ * Set while React Native's own rejection warning runs. It builds an `Error` of its own and hands it
+ * to `handleException`, and that one is the rejection a second time, already reported.
+ */
+let forwardingRejection = false;
+
 /** Installs the listeners. Idempotent, like `init`. */
 export function installErrorCapture(): void {
   if (installed) return;
   installed = true;
   listenToExceptionsManager();
+  trackRejections();
 }
 
 /**
@@ -129,7 +143,9 @@ function listenToExceptionsManager(): void {
   if (!manager || typeof original !== 'function') return;
 
   manager.handleException = function (this: unknown, error: unknown, isFatal: boolean) {
-    reportError(error, mechanismOf(error, isFatal), isFatal === true);
+    if (!forwardingRejection) {
+      reportError(error, mechanismOf(error, isFatal), isFatal === true);
+    }
     return original.call(this, error, isFatal);
   };
 }
@@ -143,6 +159,61 @@ function mechanismOf(error: unknown, isFatal: boolean): Mechanism {
     typeof error === 'object' && error !== null && (error as {isComponentError?: unknown}).isComponentError === true;
   if (!isComponentError) return 'global_handler';
   return isFatal ? 'react_render' : 'error_boundary';
+}
+
+/**
+ * Unhandled promise rejections, which React Native does not report at all in a release build.
+ *
+ * Hermes only, which is React Native's engine by default. Hermes keeps one rejection tracker and
+ * enabling it replaces whatever was there, so in development — where React Native already enabled it,
+ * to warn about rejections — its options are called from ours and the warning stays. If they cannot
+ * be read, nothing is replaced: a rejection then arrives the way React Native's warning hands it over.
+ *
+ * A tracker another library enabled before `init` is replaced the same way, and there is no calling
+ * it from ours: Hermes has no way to ask what is installed. Whichever library enables tracking last
+ * is the one that hears rejections.
+ */
+function trackRejections(): void {
+  const hermes = (globalThis as {HermesInternal?: any}).HermesInternal;
+  if (
+    typeof hermes?.hasPromise !== 'function' ||
+    !hermes.hasPromise() ||
+    typeof hermes.enablePromiseRejectionTracker !== 'function'
+  ) {
+    return;
+  }
+
+  let warning: RejectionOptions | undefined;
+  if (__DEV__) {
+    warning = reactNativeRejectionOptions();
+    if (!warning) return;
+  }
+
+  hermes.enablePromiseRejectionTracker({
+    allRejections: true,
+    onUnhandled: (id: number, rejection: unknown) => {
+      reportError(rejection, 'unhandled_rejection', false);
+      if (warning?.onUnhandled) {
+        forwardingRejection = true;
+        try {
+          warning.onUnhandled(id, rejection);
+        } finally {
+          forwardingRejection = false;
+        }
+      }
+    },
+    onHandled: (id: number, rejection?: unknown) => warning?.onHandled?.(id, rejection),
+  });
+}
+
+function reactNativeRejectionOptions(): RejectionOptions | undefined {
+  try {
+    const module = require('react-native/Libraries/promiseRejectionTrackingOptions');
+    const options = module?.default ?? module;
+    return typeof options?.onUnhandled === 'function' ? options : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
