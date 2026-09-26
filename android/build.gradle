@@ -56,9 +56,10 @@ repositories {
 
 dependencies {
     implementation "com.facebook.react:react-android"
-    // 0.28.0 e o que a master do SDK declara e o que a tag v0.28.0 publica. Estava em 0.26.0, um
-    // numero que nunca chegou a ser publicado — o build so passava porque a linha acima resolve de
-    // `mavenLocal`, onde um `publishToMavenLocal` local o tinha colocado. Num consumidor sem esse
-    // passo, a resolucao falha.
-    implementation "io.lightsession:lightsession-android:0.28.0"
+    // The SDK as it stands, and it has to be kept there by hand: nothing here moves it, and this pin
+    // sat at 0.28.0 while the SDK reached 0.39.1. What that cost a React Native app was measured, not
+    // assumed — a WebView's page, covered whole since 0.37.0, shipped legible in the screen map; a
+    // session did not end with the app going to the background (0.30.0); a SurfaceView, a map's or a
+    // video's, came back black in the replay (0.32.0).
+    implementation "io.lightsession:lightsession-android:0.39.1"
 }
