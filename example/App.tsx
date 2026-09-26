@@ -8,6 +8,8 @@
  *   Home    text, an image and touchables   — does a wireframe of RN read as a screen at all?
  *   Form    inputs with real content        — does `maskText` cover RN text?
  *   List    many rows in a ScrollView       — does a list come out as rows, or as one slab?
+ *   Web     a page in a WebView             — its text is drawn by the page, not by views the mask
+ *                                             scan can read, so it has to be covered whole
  *
  * The navigation cases — the one thing native cannot know is which screen a single-Activity,
  * single-view-controller app is on, so these exercise every way a "place" happens in RN:
@@ -38,6 +40,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {WebView} from 'react-native-webview';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -67,6 +70,7 @@ function HomeScreen({navigation}: any) {
 
       <CaseButton first label="Go to the form" onPress={() => navigation.navigate('Form')} />
       <CaseButton label="Go to the list" onPress={() => navigation.navigate('List')} />
+      <CaseButton label="A web page" onPress={() => navigation.navigate('Web')} />
       <CaseButton label="Tabs" onPress={() => navigation.navigate('Tabs')} />
       <CaseButton label="Nested navigation" onPress={() => navigation.navigate('OuterHome')} />
       <CaseButton label="Sheet (modal route)" onPress={() => navigation.navigate('Sheet')} />
@@ -115,6 +119,30 @@ function FormScreen({navigation}: any) {
       />
 
       <CaseButton first label="Go to the list" onPress={() => navigation.navigate('List')} />
+    </View>
+  );
+}
+
+/**
+ * A page with a person on it, in the WebView React Native apps use.
+ *
+ * Nothing on it is a TextView or a UILabel: the page draws its own text, so a mask scan that reads
+ * views finds nothing to cover, and a capture that trusted it would ship the name, the address and the
+ * card number legible. The SDKs cover a web view whole instead — Android since 0.37.0.
+ */
+const PAGE = `<!doctype html><meta name="viewport" content="width=device-width, initial-scale=1">
+<body style="font: 20px -apple-system, Roboto, sans-serif; color: #111; margin: 24px">
+<h2>Delivery details</h2>
+<p>Maria Aparecida dos Santos</p>
+<p>Rua das Flores, 120 — apto 42<br>São Paulo, SP 01310-000</p>
+<p>Card ending 4242 · expires 09/29</p>
+</body>`;
+
+function WebScreen() {
+  return (
+    <View style={styles.screen}>
+      <Text style={styles.title}>A web page</Text>
+      <WebView originWhitelist={['*']} source={{html: PAGE}} style={styles.web} />
     </View>
   );
 }
@@ -446,6 +474,7 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Form" component={FormScreen} />
         <Stack.Screen name="List" component={ListScreen} />
+        <Stack.Screen name="Web" component={WebScreen} />
         <Stack.Screen name="Tabs" component={TabsCase} />
         <Stack.Screen name="OuterHome" component={OuterHomeScreen} />
         <Stack.Screen name="OuterDetail" component={OuterDetailScreen} />
@@ -460,6 +489,7 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  web: {flex: 1, marginTop: 12},
   screen: {flex: 1, backgroundColor: '#ffffff', padding: 20},
   listBody: {paddingBottom: 40},
   title: {fontSize: 22, fontWeight: '700', color: '#111111', marginBottom: 8},
