@@ -4,7 +4,7 @@ const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 /**
  * Metro configuration for an example app that consumes the library beside it.
  *
- * The library is a `file:..` dependency, so `node_modules/lightsession-react-native` is a symlink
+ * The library is a `file:..` dependency, so `node_modules/@lightsession/react-native` is a symlink
  * pointing *outside* this project. Metro watches only its own root, so without `watchFolders` the
  * import fails with "could not be found within the project" — which reads like a missing package
  * rather than a resolver that was never told where to look.
@@ -15,9 +15,20 @@ const libraryRoot = path.resolve(__dirname, '..');
 
 const appModules = path.resolve(__dirname, 'node_modules');
 
+// The library's own `node_modules`, which exists on any machine that ran `npm install` at its root —
+// CI does, for the typecheck, and so does anyone who works on the library. It holds React, React
+// Native and React Navigation as devDependencies, and Metro resolves an import from the file's own
+// directory upwards before anything below is consulted: so the library's `useRef` came from its own
+// React, not the app's, and the example died on launch with "Cannot read property 'useRef' of null".
+// Blocked, so the library's imports can only resolve against the app's tree.
+const libraryModules = path.resolve(libraryRoot, 'node_modules');
+const escape = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const config = {
   watchFolders: [libraryRoot],
   resolver: {
+    blockList: [new RegExp(`^${escape(libraryModules)}\\/.*`)],
+
     // Where to look when resolving an import made *from inside the library*. The library has no
     // `node_modules` of its own — it should not; `react` and `react-native` are peer dependencies, and
     // a second copy of either is the classic way to get two Reacts and a hook that throws about
@@ -28,7 +39,7 @@ const config = {
     // Mapped explicitly rather than left to symlink following, which Metro has done inconsistently
     // across versions — and when it fails, it fails at bundle time, long after the build looked fine.
     extraNodeModules: {
-      'lightsession-react-native': libraryRoot,
+      '@lightsession/react-native': libraryRoot,
       react: path.resolve(appModules, 'react'),
       'react-native': path.resolve(appModules, 'react-native'),
     },
