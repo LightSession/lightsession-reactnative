@@ -50,3 +50,55 @@ jobs:
               raise SystemExit("::error::o tarball nao levaria: " + ", ".join(faltando))
           print(f"{len(arquivos)} arquivos, todos os exigidos presentes")
           PY
+
+  # O exemplo compilado de verdade, nas duas plataformas, com o JavaScript empacotado junto.
+  #
+  # O job acima nunca compilava o lado nativo, e por isso nada viu o que parou de funcionar: o SDK do
+  # Android ficou em 0.28.0 e o do iOS em 0.3.x enquanto os dois andavam, o `index.js` do exemplo
+  # importava o pacote pelo nome antigo, e o Metro carregava duas copias do React. Um build de release
+  # empacota o bundle, entao um import que nao resolve quebra aqui, e nao na mao de quem abrir o app.
+  # Assinado com a debug.keystore do template, como o exemplo ja faz: nenhum segredo entra aqui.
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - run: npm ci
+        working-directory: example
+
+      # Uma arquitetura so: o que se testa e se o codigo compila e o bundle resolve, e cada ABI a
+      # mais e o mesmo codigo nativo compilado de novo.
+      - run: ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon
+        working-directory: example/android
+
+  # O mesmo no iOS, so em PR — minutos de macOS custam mais, e e o que o repositorio do Flutter faz.
+  # O SDK vem do trunk, que e de onde um app o recebe.
+  ios:
+    if: github.event_name == 'pull_request'
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - run: npm ci
+        working-directory: example
+
+      - run: pod install
+        working-directory: example/ios
+
+      - run: >
+          xcodebuild -workspace example.xcworkspace -scheme example -configuration Release
+          -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO build
+        working-directory: example/ios
