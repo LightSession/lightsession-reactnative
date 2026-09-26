@@ -12,11 +12,11 @@ Pod::Spec.new do |s|
   s.name         = "lightsession-react-native"
   s.version      = package["version"]
   s.summary      = package["description"]
-  s.homepage     = "https://github.com/lightsession/lightsession-react-native"
+  s.homepage     = "https://github.com/LightSession/lightsession-reactnative"
   s.license      = { :type => "Apache-2.0", :file => "LICENSE" }
   s.author       = "LightSession"
   s.platforms    = { :ios => "15.0" }
-  s.source       = { :git => "https://github.com/lightsession/lightsession-react-native.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/LightSession/lightsession-reactnative.git", :tag => "#{s.version}" }
 
   # Named explicitly, because the pod's name has hyphens and the module name derived from it would not: the
   # Objective-C++ file imports "LightSessionReactNative-Swift.h" and that name has to be predictable.
