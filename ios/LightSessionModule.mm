@@ -50,6 +50,16 @@ RCT_EXPORT_MODULE(LightSession)
     NSMutableDictionary *settings = [config mutableCopy];
     settings[@"screensReportedByHost"] = @YES;
     settings[@"reportedScreenKind"] = @"REACT_NATIVE";
+    // The JavaScript options end in `Ms`, the names the Android SDK reads; the iOS SDK's bridge reads
+    // `Millis`. Passed under the iOS names too, or an interval or a timeout set in JavaScript is dropped
+    // on iOS with nothing said: measured, `captureIntervalMs: 3000` left an idle screen recording a
+    // frame a second.
+    if (config[@"captureIntervalMs"] != nil) {
+        settings[@"captureIntervalMillis"] = config[@"captureIntervalMs"];
+    }
+    if (config[@"sessionTimeoutMs"] != nil) {
+        settings[@"sessionTimeoutMillis"] = config[@"sessionTimeoutMs"];
+    }
 
     [LSRNBridge start:settings verbose:[config[@"verbose"] boolValue]];
 }
